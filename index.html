@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Solving - Google Drive Storage</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header h1 { color: #667eea; font-size: 1.8em; }
+        .header p { color: #666; }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .nav-tab.active { color: #667eea; border-bottom: 3px solid #667eea; }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .card.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-danger { background: #f56565; color: white; }
+        .btn-info { background: #4299e1; color: white; }
+        .btn-search { background: #ed8936; color: white; width: 100%; font-size: 16px; padding: 14px; }
+        .btn-pdf { background: #e53e3e; color: white; font-size: 12px; padding: 8px 16px; cursor: pointer; border: none; border-radius: 6px; }
+        .btn-pdf:hover { background: #c53030; }
+        .btn-translate { background: #9b59b6; color: white; font-size: 12px; padding: 8px 16px; cursor: pointer; border: none; border-radius: 6px; }
+        .btn-translate:hover { background: #8e44ad; }
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .machine-item {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .machine-info h4 { color: #2d3748; margin-bottom: 8px; }
+        .machine-info p { color: #718096; font-size: 14px; margin: 5px 0; }
+        .manual-info {
+            background: #edf2f7;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .manual-info a {
+            color: #667eea;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .manual-info a:hover { text-decoration: underline; }
+        .button-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .badge-no-manual {
+            background: #f56565;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .badge-converted {
+            background: #48bb78;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .badge-drive {
+            background: #4285f4;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .search-container {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .result-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ed8936;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .result-title {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .result-content {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 13px;
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .result-translated {
+            background: #e6fffa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid #48bb78;
+            display: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .result-translated.show {
+            display: block;
+        }
+        .highlight {
+            background-color: #fefcbf;
+            color: #744210;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .search-info {
+            background: #e6fffa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #234e52;
+        }
+        .no-result { text-align: center; padding: 40px; color: #999; }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        .alert-success { background: #c6f6d5; color: #22543d; }
+        .alert-error { background: #fed7d7; color: #742a2a; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .close { float: right; font-size: 28px; cursor: pointer; }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .loading-small {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #48bb78;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #48bb78;
+            transition: width 0.3s;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .drive-link {
+            font-size: 12px;
+            word-break: break-all;
+            background: #e8f0fe;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 E-Solving Management System</h1>
+            <p>Upload PDF ke Google Drive → Cari Keyword → Translate → Buka PDF</p>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('management')">📋 Management</button>
+                <button class="nav-tab" onclick="switchTab('esolving')">🔍 E-Solving</button>
+            </div>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div id="managementPage" class="card active">
+            <h3 class="card-title">📝 Input Mesin Baru</h3>
+            <form id="machineForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Area</label>
+                        <select id="area" required>
+                            <option value="">Pilih Area</option>
+                            <option value="Injeksi">Injeksi</option>
+                            <option value="Non Injeksi">Non Injeksi</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Proses</label>
+                        <select id="proses" required>
+                            <option value="">Pilih Proses</option>
+                            <option value="Mixing">Mixing</option>
+                            <option value="Tabletting">Tabletting</option>
+                            <option value="Coating">Coating</option>
+                            <option value="Stripping">Stripping</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Mesin</label>
+                        <input type="text" id="namaMesin" placeholder="Contoh: Tablet Press Machine" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Simpan Mesin</button>
+            </form>
+
+            <h3 class="card-title" style="margin-top: 30px;">📚 Daftar Mesin & Upload Manual Book</h3>
+            <div id="machineList" class="machine-grid"></div>
+        </div>
+
+        <div id="esolvingPage" class="card">
+            <h3 class="card-title">🔍 Cari Problem Solving</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pilih Mesin</label>
+                    <select id="searchMachineSelect" onchange="onMachineChange()">
+                        <option value="">-- Pilih Mesin --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kata Kunci Pencarian</label>
+                    <input type="text" id="searchKeyword" placeholder="Contoh: cleaning, punch, die, error...">
+                </div>
+            </div>
+            
+            <button class="btn btn-search" onclick="searchManual()">
+                🔍 Cari Langsung (Keyword → Hasil)
+            </button>
+
+            <div id="searchResults" style="margin-top: 30px;"></div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>📖 Upload Manual Book ke Google Drive</h3>
+            <form id="uploadForm">
+                <input type="hidden" id="uploadMachineId">
+                <div class="form-group">
+                    <label>File PDF</label>
+                    <input type="file" id="pdfFile" accept=".pdf" required>
+                    <small style="color:#666;">File akan diupload ke Google Drive dan tersimpan permanen</small>
+                </div>
+                <div id="uploadProgress" style="display:none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading...</p>
+                </div>
+                <button type="submit" class="btn btn-success" id="uploadBtn">📤 Upload ke Google Drive</button>
+                <div id="uploadStatus" style="margin-top: 10px; display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // ============ KONFIGURASI ============
+        // GANTI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT KAMU!
+        const GOOGLE_DRIVE_API_URL = 'https://script.google.com/macros/s/AKfycbzkG8tAYc3W-nO0KhscJ2uKVODmRcSIad2NPNFudx1WopUCbBapKRrOJcrlyttTKM4_aA/exec';
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        let machines = [];
+        let manuals = {};
+
+        function loadData() {
+            try {
+                const storedMachines = localStorage.getItem('es_machines');
+                const storedManuals = localStorage.getItem('es_manuals');
+                
+                if(storedMachines) machines = JSON.parse(storedMachines);
+                if(storedManuals) manuals = JSON.parse(storedManuals);
+                
+                if(!Array.isArray(machines)) machines = [];
+                if(!manuals) manuals = {};
+            } catch(e) { console.log('Load error:', e); }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('es_machines', JSON.stringify(machines));
+                localStorage.setItem('es_manuals', JSON.stringify(manuals));
+            } catch(e) { console.log('Save error:', e); }
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alert');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+
+        // ============ UPLOAD KE GOOGLE DRIVE ============
+        async function uploadToGoogleDrive(file, machineId) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Data = e.target.result.split(',')[1];
+                    
+                    const formData = new FormData();
+                    formData.append('file', base64Data);
+                    formData.append('fileName', file.name);
+                    formData.append('machineId', machineId);
+                    
+                    try {
+                        const response = await fetch(GOOGLE_DRIVE_API_URL, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            resolve(result);
+                        } else {
+                            reject(new Error(result.error));
+                        }
+                    } catch(error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ============ EKSTRAK TEKS PDF ============
+        async function extractTextFromPDF(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const totalPages = Math.min(pdf.numPages, 50);
+                let fullText = '';
+                
+                for(let i = 1; i <= totalPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += `=== HALAMAN ${i} ===\n${pageText}\n\n`;
+                }
+                return fullText;
+            } catch(error) {
+                console.error('Extract error:', error);
+                return null;
+            }
+        }
+
+        // ============ TRANSLATE ============
+        async function translateWithGoogle(text, elementId) {
+            const container = document.getElementById(elementId);
+            if (!container) return;
+            
+            container.innerHTML = '<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br><span class="loading-small"></span> Menerjemahkan...</div>';
+            container.classList.add('show');
+            
+            try {
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(text.substring(0, 1000))}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                let translated = '';
+                if (data && data[0]) {
+                    for (const part of data[0]) {
+                        if (part[0]) translated += part[0];
+                    }
+                }
+                
+                if (translated && translated.length > 0) {
+                    translated = translated.replace(/\s+/g, ' ').trim();
+                    container.innerHTML = `<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br>${escapeHtml(translated)}</div>`;
+                } else {
+                    container.innerHTML = `<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br>${escapeHtml(text)}</div>`;
+                }
+            } catch(error) {
+                container.innerHTML = `<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br>${escapeHtml(text)}</div>`;
+            }
+        }
+
+        // ============ BUKA PDF DARI GOOGLE DRIVE ============
+        function openPDFFromDrive(driveUrl, pageNumber, keyword) {
+            let previewUrl = driveUrl;
+            if (driveUrl && driveUrl.includes('file/d/')) {
+                const fileId = driveUrl.match(/file\/d\/([^\/]+)/);
+                if (fileId) {
+                    previewUrl = `https://drive.google.com/file/d/${fileId[1]}/preview`;
+                }
+            }
+            window.open(previewUrl + '#page=' + pageNumber, '_blank');
+            showAlert(`📖 Membuka PDF Halaman ${pageNumber} dari Google Drive. Tekan Ctrl+F untuk cari "${keyword}"`, 'success');
+        }
+
+        // ============ CRUD ============
+        async function uploadAndProcessPDF(machineId, file) {
+            const statusDiv = document.getElementById('uploadStatus');
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '📤 Mengupload ke Google Drive...';
+            statusDiv.style.color = '#ed8936';
+            progressDiv.style.display = 'block';
+            
+            try {
+                progressFill.style.width = '30%';
+                progressText.innerHTML = 'Uploading to Google Drive...';
+                
+                const driveResult = await uploadToGoogleDrive(file, machineId);
+                
+                progressFill.style.width = '70%';
+                progressText.innerHTML = 'Mengekstrak teks dari PDF...';
+                
+                const fullText = await extractTextFromPDF(file);
+                
+                progressFill.style.width = '100%';
+                progressText.innerHTML = 'Selesai!';
+                
+                if (fullText && fullText.length > 100) {
+                    manuals[machineId] = {
+                        name: file.name,
+                        size: Math.round(file.size / 1024),
+                        pages: (fullText.match(/=== HALAMAN/g) || []).length,
+                        uploadedAt: new Date().toLocaleString('id-ID'),
+                        driveUrl: driveResult.fileUrl,
+                        directLink: driveResult.directLink,
+                        fileId: driveResult.fileId
+                    };
+                    localStorage.setItem(`pdf_text_${machineId}`, fullText);
+                    saveData();
+                    
+                    statusDiv.innerHTML = '✅ Berhasil disimpan di Google Drive!';
+                    statusDiv.style.color = '#48bb78';
+                    showAlert(`✅ Berhasil! File tersimpan di Google Drive`, 'success');
+                    return true;
+                } else {
+                    statusDiv.innerHTML = '❌ Gagal ekstrak teks. Pastikan PDF bukan scan.';
+                    statusDiv.style.color = '#f56565';
+                    showAlert('❌ Gagal mengekstrak teks dari PDF', 'error');
+                    return false;
+                }
+            } catch(e) {
+                console.error('Upload error:', e);
+                statusDiv.innerHTML = '❌ Error: ' + e.message;
+                statusDiv.style.color = '#f56565';
+                showAlert('❌ Gagal upload ke Google Drive: ' + e.message, 'error');
+                return false;
+            }
+        }
+
+        function addMachine(area, proses, namaMesin) {
+            const id = Date.now().toString();
+            machines.push({ id, area, proses, namaMesin, createdAt: new Date().toLocaleString('id-ID') });
+            saveData();
+            renderMachineList();
+            updateMachineSelect();
+            showAlert('✅ Mesin ditambahkan!', 'success');
+        }
+
+        function deleteMachine(id) {
+            if(confirm('Hapus mesin ini? (File di Google Drive tetap ada)')) {
+                machines = machines.filter(m => m.id !== id);
+                delete manuals[id];
+                localStorage.removeItem(`pdf_text_${id}`);
+                saveData();
+                renderMachineList();
+                updateMachineSelect();
+                showAlert('🗑️ Mesin dihapus!', 'success');
+            }
+        }
+
+        function deleteManual(machineId) {
+            if(confirm('Hapus manual book? (File di Google Drive tetap ada)')) {
+                manuals[machineId] = null;
+                localStorage.removeItem(`pdf_text_${machineId}`);
+                saveData();
+                renderMachineList();
+                showAlert('📄 Manual dihapus dari sistem!', 'success');
+            }
+        }
+
+        // ============ PENCARIAN ============
+        async function searchManual() {
+            const machineId = document.getElementById('searchMachineSelect').value;
+            const keyword = document.getElementById('searchKeyword').value.trim().toLowerCase();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if(!machineId) { showAlert('Pilih mesin dulu!', 'error'); return; }
+            if(!keyword) { showAlert('Masukkan kata kunci!', 'error'); return; }
+            
+            const machine = machines.find(m => m.id === machineId);
+            const textContent = localStorage.getItem(`pdf_text_${machineId}`);
+            
+            if(!textContent) {
+                resultsDiv.innerHTML = `<div class="search-container"><div class="no-result">⚠️ Upload PDF manual book dulu ya!</div></div>`;
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="search-container"><div class="loading">🔍 Sedang mencari...</div></div>';
+            
+            const lines = textContent.split('\n');
+            const results = [];
+            let currentPage = 1;
+            
+            for(let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const pageMarker = line.match(/=== HALAMAN (\d+) ===/);
+                if(pageMarker) currentPage = parseInt(pageMarker[1]);
+                if(line && line.toLowerCase().includes(keyword) && !line.includes('===') && line.trim().length > 10) {
+                    results.push({ line: line.trim(), lineNumber: i + 1, page: currentPage });
+                }
+            }
+            
+            if(results.length > 0) {
+                let resultsHtml = '';
+                for(let idx = 0; idx < Math.min(results.length, 15); idx++) {
+                    const result = results[idx];
+                    const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    const highlightedLine = result.line.replace(regex, '<span class="highlight">$1</span>');
+                    const translateId = `translate-${Date.now()}-${idx}`;
+                    const driveUrl = manuals[machineId]?.driveUrl || '';
+                    
+                    resultsHtml += `
+                        <div class="result-item">
+                            <div class="result-title">
+                                <span>📄 Halaman ${result.page}</span>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn-translate" onclick="translateWithGoogle(\`${escapeHtmlForAttr(result.line)}\`, '${translateId}')">
+                                        🌐 Translate
+                                    </button>
+                                    <button class="btn-pdf" onclick="openPDFFromDrive('${driveUrl}', ${result.page}, '${escapeHtmlForAttr(keyword)}')">
+                                        📖 Buka PDF Halaman ${result.page}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="result-content"><strong>🇬🇧 English:</strong><br>${highlightedLine}</div>
+                            <div id="${translateId}" class="result-translated"></div>
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="search-container">
+                        <div class="search-info">
+                            ✅ <strong>${results.length}</strong> hasil ditemukan untuk "<strong>${escapeHtml(keyword)}</strong>" 
+                            pada mesin <strong>${escapeHtml(machine.namaMesin)}</strong>
+                        </div>
+                        ${resultsHtml}
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `<div class="search-container"><div class="no-result">😞 Tidak ditemukan "<strong>${escapeHtml(keyword)}</strong>" di manual book.</div></div>`;
+            }
+        }
+
+        function onMachineChange() {
+            const machineId = document.getElementById('searchMachineSelect').value;
+            const resultsDiv = document.getElementById('searchResults');
+            const textContent = localStorage.getItem(`pdf_text_${machineId}`);
+            if(machineId && textContent) {
+                const kb = Math.round(textContent.length / 1024);
+                resultsDiv.innerHTML = `<div class="search-container"><div class="search-info">📊 Manual book siap dicari! Total teks: ${kb} KB<br>📁 File tersimpan di Google Drive</div></div>`;
+            } else if(machineId && !textContent) {
+                resultsDiv.innerHTML = `<div class="search-container"><div class="no-result">⚠️ Upload PDF manual book dulu ya!</div></div>`;
+            } else {
+                resultsDiv.innerHTML = '';
+            }
+        }
+
+        function renderMachineList() {
+            const container = document.getElementById('machineList');
+            if(machines.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 Belum ada mesin</div>';
+                return;
+            }
+            
+            container.innerHTML = machines.map(machine => {
+                const manual = manuals[machine.id];
+                const hasManual = manual !== null;
+                const textSize = localStorage.getItem(`pdf_text_${machine.id}`)?.length || 0;
+                const kb = Math.round(textSize / 1024);
+                
+                return `
+                    <div class="machine-item">
+                        <div class="machine-info">
+                            <h4>🔧 ${escapeHtml(machine.namaMesin)}</h4>
+                            <p><strong>Area:</strong> ${escapeHtml(machine.area)}</p>
+                            <p><strong>Proses:</strong> ${escapeHtml(machine.proses)}</p>
+                            <p><small>${machine.createdAt}</small></p>
+                        </div>
+                        ${hasManual ? `
+                            <div class="manual-info">
+                                <strong>📘 Manual:</strong> ${escapeHtml(manual.name)}<br>
+                                <span class="badge-drive">☁️ Google Drive</span>
+                                <span class="badge-converted">✅ ${manual.pages} halaman | ${kb} KB teks</span><br>
+                                <div class="drive-link">
+                                    <a href="${manual.driveUrl}" target="_blank">🔗 Buka di Google Drive</a>
+                                </div>
+                                <small>Upload: ${manual.uploadedAt}</small>
+                                <div class="button-group">
+                                    <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteManual('${machine.id}')">Hapus Manual</button>
+                                </div>
+                            </div>
+                        ` : `<div class="manual-info"><span class="badge-no-manual">Belum ada manual</span></div>`}
+                        <div class="button-group">
+                            <button class="btn btn-info" style="padding:5px 10px;" onclick="openUploadModal('${machine.id}')">📤 Upload PDF</button>
+                            <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteMachine('${machine.id}')">🗑️ Hapus Mesin</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateMachineSelect() {
+            const select = document.getElementById('searchMachineSelect');
+            select.innerHTML = '<option value="">-- Pilih Mesin --</option>';
+            machines.forEach(m => {
+                const hasText = localStorage.getItem(`pdf_text_${m.id}`) ? '✅' : '⏳';
+                select.innerHTML += `<option value="${m.id}">${hasText} ${escapeHtml(m.namaMesin)} (${m.area} - ${m.proses})</option>`;
+            });
+        }
+
+        function escapeHtml(text) {
+            if(!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeHtmlForAttr(text) {
+            if(!text) return '';
+            return text.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        }
+
+        function openUploadModal(machineId) {
+            document.getElementById('uploadMachineId').value = machineId;
+            document.getElementById('uploadModal').style.display = 'flex';
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('uploadStatus').style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').textContent = '📤 Upload ke Google Drive';
+        }
+
+        function closeModal() { document.getElementById('uploadModal').style.display = 'none
