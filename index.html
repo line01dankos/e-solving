@@ -762,4 +762,87 @@
             document.getElementById('uploadBtn').textContent = '📤 Upload ke Google Drive';
         }
 
-        function closeModal() { document.getElementById('uploadModal').style.display = 'none
+        function closeModal() { document.getElementById('uploadModal').style.display = 'none'; }
+
+        function switchTab(tab) {
+            const management = document.getElementById('managementPage');
+            const esolving = document.getElementById('esolvingPage');
+            const tabs = document.querySelectorAll('.nav-tab');
+            if(tab === 'management') {
+                management.classList.add('active');
+                esolving.classList.remove('active');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+                renderMachineList();
+            } else {
+                management.classList.remove('active');
+                esolving.classList.add('active');
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+                updateMachineSelect();
+                onMachineChange();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('machineForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const area = document.getElementById('area').value;
+            const proses = document.getElementById('proses').value;
+            const namaMesin = document.getElementById('namaMesin').value.trim();
+            if(area && proses && namaMesin) {
+                addMachine(area, proses, namaMesin);
+                e.target.reset();
+            } else {
+                showAlert('Isi semua field!', 'error');
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const machineId = document.getElementById('uploadMachineId').value;
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            if(!pdfFile) { showAlert('Pilih file PDF!', 'error'); return; }
+            if(pdfFile.type !== 'application/pdf') { showAlert('Hanya file PDF!', 'error'); return; }
+            
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').textContent = '⏳ Memproses...';
+            document.getElementById('uploadStatus').style.display = 'block';
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            
+            const success = await uploadAndProcessPDF(machineId, pdfFile);
+            if(success) {
+                renderMachineList();
+                updateMachineSelect();
+                setTimeout(() => closeModal(), 2000);
+            }
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').textContent = '📤 Upload ke Google Drive';
+        });
+
+        document.getElementById('searchKeyword').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') searchManual();
+        });
+
+        window.onclick = (event) => {
+            const modal = document.getElementById('uploadModal');
+            if(event.target === modal) closeModal();
+        };
+
+        window.translateWithGoogle = translateWithGoogle;
+        window.openPDFFromDrive = openPDFFromDrive;
+        window.searchManual = searchManual;
+        window.switchTab = switchTab;
+        window.deleteManual = deleteManual;
+        window.deleteMachine = deleteMachine;
+        window.openUploadModal = openUploadModal;
+        window.onMachineChange = onMachineChange;
+        window.closeModal = closeModal;
+
+        loadData();
+        renderMachineList();
+        updateMachineSelect();
+    </script>
+</body>
+</html>
