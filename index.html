@@ -562,6 +562,87 @@
             }
         }
 
+        // ============ RENDER MACHINE LIST (DIPERBAIKI) ============
+        function renderMachineList() {
+            const container = document.getElementById('machineList');
+            if (!machines || machines.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 Belum ada mesin</div>';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 0; i < machines.length; i++) {
+                const machine = machines[i];
+                const manual = manuals[machine.id] || null;
+                const hasManual = manual !== null && manual !== undefined;
+                const textSize = localStorage.getItem(`pdf_text_${machine.id}`)?.length || 0;
+                const kb = Math.round(textSize / 1024);
+                
+                html += `
+                    <div class="machine-item">
+                        <div class="machine-info">
+                            <h4>🔧 ${escapeHtml(machine.namaMesin)}</h4>
+                            <p><strong>Area:</strong> ${escapeHtml(machine.area)}</p>
+                            <p><strong>Proses:</strong> ${escapeHtml(machine.proses)}</p>
+                            <p><small>${machine.createdAt || ''}</small></p>
+                        </div>
+                        ${hasManual ? `
+                            <div class="manual-info">
+                                <strong>📘 Manual:</strong> ${escapeHtml(manual.name || '')}<br>
+                                <span class="badge-drive">☁️ Google Drive</span>
+                                <span class="badge-converted">✅ ${manual.pages || 0} halaman | ${kb} KB teks</span><br>
+                                <div class="drive-link"><a href="${manual.driveUrl || '#'}" target="_blank">🔗 Buka di Google Drive</a></div>
+                                <small>Upload: ${manual.uploadedAt || ''}</small>
+                                <div class="button-group">
+                                    <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteManual('${machine.id}')">Hapus Manual</button>
+                                </div>
+                            </div>
+                        ` : `<div class="manual-info"><span class="badge-no-manual">Belum ada manual</span></div>`}
+                        <div class="button-group">
+                            <button class="btn btn-info" style="padding:5px 10px;" onclick="openUploadModal('${machine.id}')">📤 Upload PDF</button>
+                            <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteMachine('${machine.id}')">🗑️ Hapus Mesin</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function updateMachineSelect() {
+            const select = document.getElementById('searchMachineSelect');
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Pilih Mesin --</option>';
+            for (let i = 0; i < machines.length; i++) {
+                const m = machines[i];
+                const hasText = localStorage.getItem(`pdf_text_${m.id}`) ? '✅' : '⏳';
+                select.innerHTML += `<option value="${m.id}">${hasText} ${escapeHtml(m.namaMesin)} (${m.area} - ${m.proses})</option>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            if(!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeHtmlForAttr(text) {
+            if(!text) return '';
+            return text.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        }
+
+        function openUploadModal(machineId) {
+            document.getElementById('uploadMachineId').value = machineId;
+            document.getElementById('uploadModal').style.display = 'flex';
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('uploadStatus').style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').textContent = '📤 Upload ke Google Drive';
+        }
+
+        function closeModal() { document.getElementById('uploadModal').style.display = 'none'; }
+
         // ============ PENCARIAN ============
         async function searchManual() {
             const machineId = document.getElementById('searchMachineSelect').value;
@@ -646,80 +727,7 @@
             }
         }
 
-        function renderMachineList() {
-            const container = document.getElementById('machineList');
-            if(machines.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 Belum ada mesin</div>';
-                return;
-            }
-            container.innerHTML = machines.map(machine => {
-                const manual = manuals[machine.id];
-                const hasManual = manual !== null;
-                const textSize = localStorage.getItem(`pdf_text_${machine.id}`)?.length || 0;
-                const kb = Math.round(textSize / 1024);
-                return `
-                    <div class="machine-item">
-                        <div class="machine-info">
-                            <h4>🔧 ${escapeHtml(machine.namaMesin)}</h4>
-                            <p><strong>Area:</strong> ${escapeHtml(machine.area)}</p>
-                            <p><strong>Proses:</strong> ${escapeHtml(machine.proses)}</p>
-                            <p><small>${machine.createdAt}</small></p>
-                        </div>
-                        ${hasManual ? `
-                            <div class="manual-info">
-                                <strong>📘 Manual:</strong> ${escapeHtml(manual.name)}<br>
-                                <span class="badge-drive">☁️ Google Drive</span>
-                                <span class="badge-converted">✅ ${manual.pages} halaman | ${kb} KB teks</span><br>
-                                <div class="drive-link"><a href="${manual.driveUrl}" target="_blank">🔗 Buka di Google Drive</a></div>
-                                <small>Upload: ${manual.uploadedAt}</small>
-                                <div class="button-group">
-                                    <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteManual('${machine.id}')">Hapus Manual</button>
-                                </div>
-                            </div>
-                        ` : `<div class="manual-info"><span class="badge-no-manual">Belum ada manual</span></div>`}
-                        <div class="button-group">
-                            <button class="btn btn-info" style="padding:5px 10px;" onclick="openUploadModal('${machine.id}')">📤 Upload PDF</button>
-                            <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteMachine('${machine.id}')">🗑️ Hapus Mesin</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateMachineSelect() {
-            const select = document.getElementById('searchMachineSelect');
-            select.innerHTML = '<option value="">-- Pilih Mesin --</option>';
-            machines.forEach(m => {
-                const hasText = localStorage.getItem(`pdf_text_${m.id}`) ? '✅' : '⏳';
-                select.innerHTML += `<option value="${m.id}">${hasText} ${escapeHtml(m.namaMesin)} (${m.area} - ${m.proses})</option>`;
-            });
-        }
-
-        function escapeHtml(text) {
-            if(!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function escapeHtmlForAttr(text) {
-            if(!text) return '';
-            return text.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/"/g, '&quot;').replace(/\n/g, ' ');
-        }
-
-        function openUploadModal(machineId) {
-            document.getElementById('uploadMachineId').value = machineId;
-            document.getElementById('uploadModal').style.display = 'flex';
-            document.getElementById('pdfFile').value = '';
-            document.getElementById('uploadStatus').style.display = 'none';
-            document.getElementById('uploadProgress').style.display = 'none';
-            document.getElementById('uploadBtn').disabled = false;
-            document.getElementById('uploadBtn').textContent = '📤 Upload ke Google Drive';
-        }
-
-        function closeModal() { document.getElementById('uploadModal').style.display = 'none'; }
-
-        // SWITCH TAB - YANG DIPERBAIKI
+        // SWITCH TAB
         window.switchTab = function(tab) {
             const managementPage = document.getElementById('managementPage');
             const esolvingPage = document.getElementById('esolvingPage');
@@ -728,14 +736,14 @@
             if(tab === 'management') {
                 managementPage.classList.add('active');
                 esolvingPage.classList.remove('active');
-                tabs[0].classList.add('active');
-                tabs[1].classList.remove('active');
+                if(tabs[0]) tabs[0].classList.add('active');
+                if(tabs[1]) tabs[1].classList.remove('active');
                 renderMachineList();
             } else {
                 managementPage.classList.remove('active');
                 esolvingPage.classList.add('active');
-                tabs[0].classList.remove('active');
-                tabs[1].classList.add('active');
+                if(tabs[0]) tabs[0].classList.remove('active');
+                if(tabs[1]) tabs[1].classList.add('active');
                 updateMachineSelect();
                 onMachineChange();
             }
