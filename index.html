@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Solving - Google Drive Storage</title>
+    <title>E-Solving Management System - Google Drive</title>
+    <link rel="icon" href="data:,">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -115,7 +116,6 @@
             text-decoration: none;
             word-break: break-all;
         }
-        .manual-info a:hover { text-decoration: underline; }
         .button-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
         .badge-no-manual {
             background: #f56565;
@@ -186,9 +186,7 @@
             font-size: 13px;
             line-height: 1.6;
         }
-        .result-translated.show {
-            display: block;
-        }
+        .result-translated.show { display: block; }
         .highlight {
             background-color: #fefcbf;
             color: #744210;
@@ -237,11 +235,7 @@
             width: 90%;
         }
         .close { float: right; font-size: 28px; cursor: pointer; }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-        }
+        .loading { text-align: center; padding: 20px; color: #667eea; }
         .loading-small {
             display: inline-block;
             width: 14px;
@@ -266,9 +260,7 @@
             background: #48bb78;
             transition: width 0.3s;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .drive-link {
             font-size: 12px;
             word-break: break-all;
@@ -376,7 +368,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
         // ============ KONFIGURASI ============
-        // GANTI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT KAMU!
         const GOOGLE_DRIVE_API_URL = 'https://script.google.com/macros/s/AKfycbzkG8tAYc3W-nO0KhscJ2uKVODmRcSIad2NPNFudx1WopUCbBapKRrOJcrlyttTKM4_aA/exec';
         
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -388,10 +379,8 @@
             try {
                 const storedMachines = localStorage.getItem('es_machines');
                 const storedManuals = localStorage.getItem('es_manuals');
-                
                 if(storedMachines) machines = JSON.parse(storedMachines);
                 if(storedManuals) manuals = JSON.parse(storedManuals);
-                
                 if(!Array.isArray(machines)) machines = [];
                 if(!manuals) manuals = {};
             } catch(e) { console.log('Load error:', e); }
@@ -418,26 +407,17 @@
                 const reader = new FileReader();
                 reader.onload = async function(e) {
                     const base64Data = e.target.result.split(',')[1];
-                    
                     const formData = new FormData();
                     formData.append('file', base64Data);
                     formData.append('fileName', file.name);
                     formData.append('machineId', machineId);
                     
                     try {
-                        const response = await fetch(GOOGLE_DRIVE_API_URL, {
-                            method: 'POST',
-                            body: formData
-                        });
+                        const response = await fetch(GOOGLE_DRIVE_API_URL, { method: 'POST', body: formData });
                         const result = await response.json();
-                        if (result.success) {
-                            resolve(result);
-                        } else {
-                            reject(new Error(result.error));
-                        }
-                    } catch(error) {
-                        reject(error);
-                    }
+                        if (result.success) resolve(result);
+                        else reject(new Error(result.error));
+                    } catch(error) { reject(error); }
                 };
                 reader.onerror = () => reject(reader.error);
                 reader.readAsDataURL(file);
@@ -452,7 +432,6 @@
                 const pdf = await loadingTask.promise;
                 const totalPages = Math.min(pdf.numPages, 50);
                 let fullText = '';
-                
                 for(let i = 1; i <= totalPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
@@ -460,32 +439,23 @@
                     fullText += `=== HALAMAN ${i} ===\n${pageText}\n\n`;
                 }
                 return fullText;
-            } catch(error) {
-                console.error('Extract error:', error);
-                return null;
-            }
+            } catch(error) { return null; }
         }
 
         // ============ TRANSLATE ============
         async function translateWithGoogle(text, elementId) {
             const container = document.getElementById(elementId);
             if (!container) return;
-            
             container.innerHTML = '<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br><span class="loading-small"></span> Menerjemahkan...</div>';
             container.classList.add('show');
-            
             try {
                 const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(text.substring(0, 1000))}`;
                 const response = await fetch(url);
                 const data = await response.json();
-                
                 let translated = '';
                 if (data && data[0]) {
-                    for (const part of data[0]) {
-                        if (part[0]) translated += part[0];
-                    }
+                    for (const part of data[0]) if (part[0]) translated += part[0];
                 }
-                
                 if (translated && translated.length > 0) {
                     translated = translated.replace(/\s+/g, ' ').trim();
                     container.innerHTML = `<div class="result-translated show"><strong>🌐 Bahasa Indonesia:</strong><br>${escapeHtml(translated)}</div>`;
@@ -502,12 +472,10 @@
             let previewUrl = driveUrl;
             if (driveUrl && driveUrl.includes('file/d/')) {
                 const fileId = driveUrl.match(/file\/d\/([^\/]+)/);
-                if (fileId) {
-                    previewUrl = `https://drive.google.com/file/d/${fileId[1]}/preview`;
-                }
+                if (fileId) previewUrl = `https://drive.google.com/file/d/${fileId[1]}/preview`;
             }
             window.open(previewUrl + '#page=' + pageNumber, '_blank');
-            showAlert(`📖 Membuka PDF Halaman ${pageNumber} dari Google Drive. Tekan Ctrl+F untuk cari "${keyword}"`, 'success');
+            showAlert(`📖 Membuka PDF Halaman ${pageNumber}. Tekan Ctrl+F untuk cari "${keyword}"`, 'success');
         }
 
         // ============ CRUD ============
@@ -525,12 +493,10 @@
             try {
                 progressFill.style.width = '30%';
                 progressText.innerHTML = 'Uploading to Google Drive...';
-                
                 const driveResult = await uploadToGoogleDrive(file, machineId);
                 
                 progressFill.style.width = '70%';
                 progressText.innerHTML = 'Mengekstrak teks dari PDF...';
-                
                 const fullText = await extractTextFromPDF(file);
                 
                 progressFill.style.width = '100%';
@@ -548,7 +514,6 @@
                     };
                     localStorage.setItem(`pdf_text_${machineId}`, fullText);
                     saveData();
-                    
                     statusDiv.innerHTML = '✅ Berhasil disimpan di Google Drive!';
                     statusDiv.style.color = '#48bb78';
                     showAlert(`✅ Berhasil! File tersimpan di Google Drive`, 'success');
@@ -556,14 +521,12 @@
                 } else {
                     statusDiv.innerHTML = '❌ Gagal ekstrak teks. Pastikan PDF bukan scan.';
                     statusDiv.style.color = '#f56565';
-                    showAlert('❌ Gagal mengekstrak teks dari PDF', 'error');
                     return false;
                 }
             } catch(e) {
-                console.error('Upload error:', e);
                 statusDiv.innerHTML = '❌ Error: ' + e.message;
                 statusDiv.style.color = '#f56565';
-                showAlert('❌ Gagal upload ke Google Drive: ' + e.message, 'error');
+                showAlert('❌ Gagal upload ke Google Drive', 'error');
                 return false;
             }
         }
@@ -658,13 +621,9 @@
                         </div>
                     `;
                 }
-                
                 resultsDiv.innerHTML = `
                     <div class="search-container">
-                        <div class="search-info">
-                            ✅ <strong>${results.length}</strong> hasil ditemukan untuk "<strong>${escapeHtml(keyword)}</strong>" 
-                            pada mesin <strong>${escapeHtml(machine.namaMesin)}</strong>
-                        </div>
+                        <div class="search-info">✅ <strong>${results.length}</strong> hasil ditemukan untuk "<strong>${escapeHtml(keyword)}</strong>" pada mesin <strong>${escapeHtml(machine.namaMesin)}</strong></div>
                         ${resultsHtml}
                     </div>
                 `;
@@ -693,13 +652,11 @@
                 container.innerHTML = '<div style="text-align:center; padding:40px;">📭 Belum ada mesin</div>';
                 return;
             }
-            
             container.innerHTML = machines.map(machine => {
                 const manual = manuals[machine.id];
                 const hasManual = manual !== null;
                 const textSize = localStorage.getItem(`pdf_text_${machine.id}`)?.length || 0;
                 const kb = Math.round(textSize / 1024);
-                
                 return `
                     <div class="machine-item">
                         <div class="machine-info">
@@ -713,9 +670,7 @@
                                 <strong>📘 Manual:</strong> ${escapeHtml(manual.name)}<br>
                                 <span class="badge-drive">☁️ Google Drive</span>
                                 <span class="badge-converted">✅ ${manual.pages} halaman | ${kb} KB teks</span><br>
-                                <div class="drive-link">
-                                    <a href="${manual.driveUrl}" target="_blank">🔗 Buka di Google Drive</a>
-                                </div>
+                                <div class="drive-link"><a href="${manual.driveUrl}" target="_blank">🔗 Buka di Google Drive</a></div>
                                 <small>Upload: ${manual.uploadedAt}</small>
                                 <div class="button-group">
                                     <button class="btn btn-danger" style="padding:5px 10px;" onclick="deleteManual('${machine.id}')">Hapus Manual</button>
@@ -764,25 +719,27 @@
 
         function closeModal() { document.getElementById('uploadModal').style.display = 'none'; }
 
-        function switchTab(tab) {
-            const management = document.getElementById('managementPage');
-            const esolving = document.getElementById('esolvingPage');
+        // SWITCH TAB - YANG DIPERBAIKI
+        window.switchTab = function(tab) {
+            const managementPage = document.getElementById('managementPage');
+            const esolvingPage = document.getElementById('esolvingPage');
             const tabs = document.querySelectorAll('.nav-tab');
+            
             if(tab === 'management') {
-                management.classList.add('active');
-                esolving.classList.remove('active');
+                managementPage.classList.add('active');
+                esolvingPage.classList.remove('active');
                 tabs[0].classList.add('active');
                 tabs[1].classList.remove('active');
                 renderMachineList();
             } else {
-                management.classList.remove('active');
-                esolving.classList.add('active');
+                managementPage.classList.remove('active');
+                esolvingPage.classList.add('active');
                 tabs[0].classList.remove('active');
                 tabs[1].classList.add('active');
                 updateMachineSelect();
                 onMachineChange();
             }
-        }
+        };
 
         // Event listeners
         document.getElementById('machineForm').addEventListener('submit', (e) => {
@@ -830,10 +787,10 @@
             if(event.target === modal) closeModal();
         };
 
+        // Export fungsi ke global
         window.translateWithGoogle = translateWithGoogle;
         window.openPDFFromDrive = openPDFFromDrive;
         window.searchManual = searchManual;
-        window.switchTab = switchTab;
         window.deleteManual = deleteManual;
         window.deleteMachine = deleteMachine;
         window.openUploadModal = openUploadModal;
